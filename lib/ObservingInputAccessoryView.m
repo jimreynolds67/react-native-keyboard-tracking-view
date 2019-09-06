@@ -14,7 +14,7 @@
 {
     static ObservingInputAccessoryViewManager *instance = nil;
     static dispatch_once_t observingInputAccessoryViewManagerOnceToken = 0;
-    
+
     dispatch_once(&observingInputAccessoryViewManagerOnceToken,^
     {
         if (instance == nil)
@@ -22,7 +22,7 @@
             instance = [ObservingInputAccessoryViewManager new];
         }
     });
-    
+
     return instance;
 }
 
@@ -36,16 +36,16 @@
 - (instancetype)init
 {
 	self = [super init];
-	
+
 	if(self)
 	{
         self.userInteractionEnabled = NO;
         self.translatesAutoresizingMaskIntoConstraints = NO;
 		self.autoresizingMask = UIViewAutoresizingFlexibleHeight;
-        
+
         [self registerForKeyboardNotifications];
 	}
-	
+
 	return self;
 }
 
@@ -65,12 +65,12 @@
 	{
 		[self.superview removeObserver:self forKeyPath:@"center"];
 	}
-	
+
 	if (newSuperview != nil)
 	{
 		[newSuperview addObserver:self forKeyPath:@"center" options:NSKeyValueObservingOptionNew context:nil];
 	}
-	
+
 	[super willMoveToSuperview:newSuperview];
 }
 
@@ -79,17 +79,22 @@
 	if ((object == self.superview) && ([keyPath isEqualToString:@"center"]))
 	{
         CGFloat centerY = self.superview.center.y;
-        
+
         if([keyPath isEqualToString:@"center"])
         {
             centerY = [change[NSKeyValueChangeNewKey] CGPointValue].y;
         }
-        
+
         CGFloat boundsH = self.superview.bounds.size.height;
-        
+        CGFloat bottomPadding = 0;
+
+        if (@available(iOS 11.0, *)) {
+            UIWindow *window = UIApplication.sharedApplication.keyWindow;
+            bottomPadding = window.safeAreaInsets.bottom;
+        }
         _previousKeyboardHeight = _keyboardHeight;
-		_keyboardHeight = MAX(0, self.window.bounds.size.height - (centerY - boundsH / 2) - self.intrinsicContentSize.height);
-		
+		_keyboardHeight = MAX(0, self.window.bounds.size.height - (centerY - boundsH / 2) - self.intrinsicContentSize.height - bottomPadding);
+
         [_delegate observingInputAccessoryViewDidChangeFrame:self];
 	}
 }
@@ -97,7 +102,7 @@
 -(void)dealloc
 {
 	[self.superview removeObserver:self forKeyPath:@"center"];
-	
+
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -109,16 +114,16 @@
 - (void)setHeight:(CGFloat)height
 {
 	_height = height;
-	
+
 	[self invalidateIntrinsicContentSize];
 }
 
 - (void)_keyboardWillShowNotification:(NSNotification*)notification
 {
 	_keyboardState = KeyboardStateWillShow;
-	
+
 	[self invalidateIntrinsicContentSize];
-    
+
     if([_delegate respondsToSelector:@selector(observingInputAccessoryViewKeyboardWillAppear:keyboardDelta:)])
     {
         [_delegate observingInputAccessoryViewKeyboardWillAppear:self keyboardDelta:_keyboardHeight - _previousKeyboardHeight];
@@ -128,16 +133,16 @@
 - (void)_keyboardDidShowNotification:(NSNotification*)notification
 {
 	_keyboardState = KeyboardStateShown;
-	
+
 	[self invalidateIntrinsicContentSize];
 }
 
 - (void)_keyboardWillHideNotification:(NSNotification*)notification
 {
 	_keyboardState = KeyboardStateWillHide;
-	
+
 	[self invalidateIntrinsicContentSize];
-    
+
     if([_delegate respondsToSelector:@selector(observingInputAccessoryViewKeyboardWillDisappear:)])
     {
         [_delegate observingInputAccessoryViewKeyboardWillDisappear:self];
@@ -147,7 +152,7 @@
 - (void)_keyboardDidHideNotification:(NSNotification*)notification
 {
 	_keyboardState = KeyboardStateHidden;
-	
+
 	[self invalidateIntrinsicContentSize];
 }
 
@@ -157,12 +162,12 @@
     {
         return;
     }
-    
+
     CGRect endFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     _keyboardHeight = [UIScreen mainScreen].bounds.size.height - endFrame.origin.y;
-    
+
     [_delegate observingInputAccessoryViewDidChangeFrame:self];
-    
+
 	[self invalidateIntrinsicContentSize];
 }
 
