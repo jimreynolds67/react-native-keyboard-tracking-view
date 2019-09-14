@@ -85,15 +85,16 @@
             centerY = [change[NSKeyValueChangeNewKey] CGPointValue].y;
         }
 
-        CGFloat boundsH = self.superview.bounds.size.height;
         CGFloat bottomPadding = 0;
+          CGFloat boundsH = self.superview.bounds.size.height;
 
-        if (@available(iOS 11.0, *)) {
-            UIWindow *window = UIApplication.sharedApplication.keyWindow;
-            bottomPadding = window.safeAreaInsets.bottom;
-        }
-        _previousKeyboardHeight = _keyboardHeight;
-		_keyboardHeight = MAX(0, self.window.bounds.size.height - (centerY - boundsH / 2) - self.intrinsicContentSize.height - bottomPadding);
+          if (@available(iOS 11.0, *)) {
+              UIWindow *window = UIApplication.sharedApplication.keyWindow;
+              bottomPadding = window.safeAreaInsets.bottom;
+          }
+
+          _previousKeyboardHeight = _keyboardHeight;
+  		_keyboardHeight = MAX(0, self.window.bounds.size.height - (centerY - boundsH / 2) - self.intrinsicContentSize.height - bottomPadding);
 
         [_delegate observingInputAccessoryViewDidChangeFrame:self];
 	}
@@ -135,6 +136,11 @@
 	_keyboardState = KeyboardStateShown;
 
 	[self invalidateIntrinsicContentSize];
+
+    if([_delegate respondsToSelector:@selector(observingInputAccessoryViewKeyboardDidAppear:)])
+    {
+        [_delegate observingInputAccessoryViewKeyboardDidAppear:self];
+    }
 }
 
 - (void)_keyboardWillHideNotification:(NSNotification*)notification
